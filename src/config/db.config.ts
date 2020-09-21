@@ -1,5 +1,5 @@
 const url = require("url");
-const DATABASE_URL = process.env.DATABASE_URL || "mysql://root:@localhost:3306/daddy_birthday";
+const DATABASE_URL = process.env.DATABASE_URL || process.env.CLEARDB_DATABASE_URL || "mysql://root:@localhost:3306/daddy_birthday";
 
 export const db_url = url.parse(DATABASE_URL);
 export const dialect = db_url.protocol.substr(0, db_url.protocol.length - 1);
