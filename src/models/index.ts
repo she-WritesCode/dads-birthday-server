@@ -1,7 +1,7 @@
-import { DB, USER, PASSWORD, HOST, dialect as _dialect, pool as _pool } from "../config/db.config.js";
+import { DB, USER, PASSWORD, HOST, dialect as _dialect, pool as _pool, DATABASE_URL } from "../config/db.config.js";
 import Message from "./message.model.js";
 import { Sequelize } from "sequelize";
-const sequelize = new Sequelize(DB, USER, PASSWORD, {
+const sequelize = new Sequelize(DATABASE_URL, {
 	host: HOST,
 	dialect: _dialect,
 	pool: {
