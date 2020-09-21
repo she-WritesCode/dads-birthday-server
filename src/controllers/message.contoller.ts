@@ -17,6 +17,7 @@ export default class MessageController extends Controller {
 				return res.status(201).json(this.successResponse(data, 201));
 			})
 			.catch((err) => {
+				console.log("this is the catch err", err)
 				return res.status(500).json(this.errorResponse(500, "Some error occurred while creating the await Message."));
 			});
 	};
