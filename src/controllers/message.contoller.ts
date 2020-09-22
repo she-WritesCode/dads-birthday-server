@@ -1,11 +1,16 @@
 import express, { response } from "express";
 import db from "../models/index";
-import { Op } from "sequelize";
+import { Sequelize, Op, OrOperator } from "sequelize";
 import { MessageParam, MessageUpdateParam } from "../models/message.model";
 import Controller from "./controller";
+import herokuLog from "heroku-log";
 const Message = db.messages;
 
 export default class MessageController extends Controller {
+	constructor() {
+		super();
+		this.modelName = "message";
+	}
 	// Create and Save a new Message
 	create = async (req: express.Request, res: express.Response) => {
 		// Create a Message
@@ -18,23 +23,40 @@ export default class MessageController extends Controller {
 			})
 			.catch((err) => {
 				console.log("this is the catch err", err);
+				herokuLog.error(err.code);
 				return res.status(500).json(this.errorResponse(500, "Some error occurred while creating the await Message."));
 			});
 	};
 
 	// Retrieve all Messages from the database.
 	findAll = async (req: express.Request, res: express.Response) => {
-		const name = req.query.name;
-		const condition = name ? { name: { [Op.like]: `%${name}%` } } : null;
+		const search = req.query.search;
+		let condition;
+		if (search) {
+			condition = { name: { [Op.like]: `%${search}%` } };
+		}
+		const page = req.query.page ? Number(req.query.page) : 1;
+		const limit = req.query.limit ? Number(req.query.limit) : 20;
+		const nOffset = limit * (page - 1);
 
-		await Message.findAll({ where: condition })
-			.then((data) => {
-				return res.json(this.successResponse(data, 200));
-			})
-			.catch((err) => {
-				console.error(err);
-				return res.status(500).json(this.errorResponse(500, "Some error occurred while retrieving the await Message."));
-			});
+		try {
+			await Message.findAndCountAll({ where: condition, offset: nOffset, limit: limit, order: [["id", "ASC"]] })
+				.then((data) => {
+					console.log(data);
+					if (data.count < 1) {
+						return res.json(this.successResponse(data, 200));
+					}
+
+					return res.json(this.successResponse(this.paginate(data, page, limit), 200));
+				})
+				.catch((err) => {
+					console.error(err);
+					return res.status(500).json(this.errorResponse(500, String(err)));
+				});
+		} catch (err) {
+			console.error(err);
+			return res.status(500).json(this.errorResponse(500, "Some error occurred while retrieving the await Message."));
+		}
 	};
 
 	// Find a single Message with an id

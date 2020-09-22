@@ -5,8 +5,7 @@ import cors from "cors";
 import db from "./models";
 import dotenv from "dotenv";
 import routes from "./routes";
-import { DB, USER, PASSWORD, HOST, dialect as _dialect, pool as _pool } from "./config/db.config.js";
-import herokuLog, { error } from "heroku-log";
+
 const app = express();
 const http = require("http").createServer(app);
 dotenv.config();
@@ -66,10 +65,6 @@ process.on("SIGTERM", closeConnection);
 	} catch (e) {
 		console.log("Sequelize failed to start up", e);
 	}
-
-	// # On Heroku
-	herokuLog.info(DB, USER, PASSWORD, HOST, _dialect, _pool);
-	console.log(DB, USER, PASSWORD, HOST, _dialect, _pool);
 
 	// listen for requests
 	http.listen(PORT, () => {
