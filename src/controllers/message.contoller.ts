@@ -3,7 +3,7 @@ import db from "../models/index";
 import { Sequelize, Op, OrOperator } from "sequelize";
 import { MessageParam, MessageUpdateParam } from "../models/message.model";
 import Controller from "./controller";
-import herokuLog from "heroku-log";
+import { logger } from "../server";
 const Message = db.messages;
 
 export default class MessageController extends Controller {
@@ -15,17 +15,20 @@ export default class MessageController extends Controller {
 	create = async (req: express.Request, res: express.Response) => {
 		// Create a Message
 		const message = req.body as MessageParam;
-
-		// Save Message in the database
-		await Message.create(message)
-			.then((data) => {
-				return res.status(201).json(this.successResponse(data, 201));
-			})
-			.catch((err) => {
-				console.log("this is the catch err", err);
-				herokuLog.error(err.code);
-				return res.status(500).json(this.errorResponse(500, "Some error occurred while creating the await Message."));
-			});
+		try {
+			// Save Message in the database
+			await Message.create(message)
+				.then((data) => {
+					res.status(201).json(this.successResponse(data, 201));
+				})
+				.catch((err) => {
+					logger.error(err);
+					res.status(500).json(this.errorResponse(500, "Some error occurred while creating the Message."));
+				});
+		} catch (err) {
+			logger.error(err);
+			res.status(500).json(this.errorResponse(500, "Some error occurred while creating the Message."));
+		}
 	};
 
 	// Retrieve all Messages from the database.
@@ -42,20 +45,15 @@ export default class MessageController extends Controller {
 		try {
 			await Message.findAndCountAll({ where: condition, offset: nOffset, limit: limit, order: [["id", "ASC"]] })
 				.then((data) => {
-					console.log(data);
-					if (data.count < 1) {
-						return res.json(this.successResponse(data, 200));
-					}
-
 					return res.json(this.successResponse(this.paginate(data, page, limit), 200));
 				})
 				.catch((err) => {
-					console.error(err);
+					logger.error(err);
 					return res.status(500).json(this.errorResponse(500, String(err)));
 				});
 		} catch (err) {
-			console.error(err);
-			return res.status(500).json(this.errorResponse(500, "Some error occurred while retrieving the await Message."));
+			logger.error(err);
+			return res.status(500).json(this.errorResponse(500, "Some error occurred while retrieving the Message."));
 		}
 	};
 
@@ -68,6 +66,7 @@ export default class MessageController extends Controller {
 				return res.json(this.successResponse(data, 200));
 			})
 			.catch((err) => {
+				logger.error(err);
 				return res.status(500).json(this.errorResponse(500, "Error retrieving Message with id=" + id));
 			});
 	};
@@ -75,52 +74,68 @@ export default class MessageController extends Controller {
 	update = async (req: express.Request, res: express.Response) => {
 		const id = req.params.id;
 
-		await Message.update(req.body as MessageUpdateParam, {
-			where: { id: id },
-		})
-			.then((num) => {
-				if (typeof num == "number") {
-					if (num === 1) {
+		try {
+			await Message.update(req.body as MessageUpdateParam, {
+				where: { id: id },
+			})
+				.then((num) => {
+					if (Number(num) === 1) {
 						return res.json(this.successResponse({}, 200, "Message was updated successfully."));
 					} else {
-						return res.json(this.errorResponse(500, `Cannot update Message with id=${id}. Maybe Message was ot found or request body is empty!`));
+						return res.json(this.errorResponse(404, `Cannot update Message with id=${id}. Maybe Message was ot found or request body is empty!`));
 					}
-				}
-			})
-			.catch((err) => {
-				return res.status(500).json(this.errorResponse(500, "Error updating Message with id=" + id));
-			});
+				})
+				.catch((err) => {
+					logger.error(err);
+					return res.status(500).json(this.errorResponse(500, "Error updating Message with id=" + id));
+				});
+		} catch (err) {
+			logger.error(err);
+			return res.status(500).json(this.errorResponse(500, "Some error occurred"));
+		}
 	};
 
 	// Delete a Message with the specified id in the request
 	delete = async (req: express.Request, res: express.Response) => {
 		const id = req.params.id;
-		await Message.destroy({
-			where: { id: id },
-		})
-			.then((num) => {
-				if (num == 1) {
-					return res.json(this.successResponse({}, 200, "Message was deleted successfully!"));
-				} else {
-					return res.json(this.errorResponse(500, `Cannot delete Message with id=${id}. Maybe Message was not found!`));
-				}
+		try {
+			await Message.destroy({
+				where: { id: id },
 			})
-			.catch((err) => {
-				return res.status(500).json(this.errorResponse(500, `Cannot delete Message with id=${id}`));
-			});
+				.then((num) => {
+					if (Number(num) == 1) {
+						return res.json(this.successResponse({}, 200, "Message was deleted successfully!"));
+					} else {
+						return res.json(this.errorResponse(500, `Cannot delete Message with id=${id}. Maybe Message was not found!`));
+					}
+				})
+				.catch((err) => {
+					logger.error(err);
+					return res.status(500).json(this.errorResponse(500, `Cannot delete Message with id=${id}`));
+				});
+		} catch (err) {
+			logger.error(err);
+			return res.status(500).json(this.errorResponse(500, "Some error occurred"));
+		}
 	};
 
 	// Delete all Messages from the database.
 	deleteAll = async (req: express.Request, res: express.Response) => {
-		await Message.destroy({
-			where: {},
-			truncate: false,
-		})
-			.then((nums) => {
-				return res.json(this.successResponse({}, 200, `${nums} Messages were deleted successfully!`));
+		try {
+			await Message.destroy({
+				where: {},
+				truncate: false,
 			})
-			.catch((err) => {
-				return res.status(500).json(this.errorResponse(500, err.message || "Some error occurred while removing all mssages."));
-			});
+				.then((nums) => {
+					return res.json(this.successResponse({}, 200, `${nums} Messages were deleted successfully!`));
+				})
+				.catch((err) => {
+					logger.error(err);
+					return res.status(500).json(this.errorResponse(500, err.message || "Some error occurred while removing all mssages."));
+				});
+		} catch (err) {
+			logger.error(err);
+			return res.status(500).json(this.errorResponse(500, "Some error occurred"));
+		}
 	};
 }

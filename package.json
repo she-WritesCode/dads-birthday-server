@@ -24,9 +24,9 @@
 		"dotenv": "^8.2.0",
 		"express": "^4.17.1",
 		"express-validation": "^3.0.6",
-		"heroku-log": "^1.4.0",
 		"mysql2": "^2.2.3",
-		"sequelize": "^6.3.5"
+		"sequelize": "^6.3.5",
+		"winston": "^3.3.3"
 	},
 	"devDependencies": {
 		"@types/cors": "^2.8.7",

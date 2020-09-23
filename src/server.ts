@@ -5,13 +5,31 @@ import cors from "cors";
 import db from "./models";
 import dotenv from "dotenv";
 import routes from "./routes";
+import { createLogger, format, transports } from "winston";
+
+export const logger = createLogger({
+	level: "info",
+	format: format.combine(
+		format.timestamp({
+			format: "YYYY-MM-DD HH:mm:ss",
+		}),
+		format.errors({ stack: true }),
+		format.splat(),
+		format.json()
+	),
+	defaultMeta: { service: "server" },
+	transports: [
+		//
+		// - Write to all logs with level `info` and below to `quick-start-combined.log`.
+		// - Write all logs error (and below) to `quick-start-error.log`.
+		//
+		new transports.File({ filename: "error.log", level: "error" }),
+		new transports.File({ filename: "combined.log" }),
+	],
+});
 
 const app = express();
-const http = require("http").createServer(app);
 dotenv.config();
-// var corsOptions = {
-// 	origin: "http://localhost:8081",
-// };
 
 app.use(cors());
 
@@ -37,14 +55,7 @@ app.get("/", (req: express.Request, res: express.Response) => {
 });
 
 // set port
-const PORT = process.env.PORT || 5002;
-
-const closeConnection = () => {
-	http.close();
-};
-
-process.on("uncaughtException", closeConnection);
-process.on("SIGTERM", closeConnection);
+const PORT = process.env.PORT || 5052;
 
 (async () => {
 	try {
@@ -67,7 +78,7 @@ process.on("SIGTERM", closeConnection);
 	}
 
 	// listen for requests
-	http.listen(PORT, () => {
+	app.listen(PORT, () => {
 		console.log(`Server is running on port ${PORT}.`);
 	});
 })();
