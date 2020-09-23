@@ -65,14 +65,14 @@ const PORT = process.env.PORT || 5052;
 		await db.sequelize.sync({ force: false, alter: true }).then(() => {
 			console.log("Sequelize is ready!");
 		});
-		if ((await db.messages.count()) < 1) {
-			await db.messages.bulkCreate([
-				{ name: "busola", organisation: "daugther", message: "i love you daddy" },
-				{ name: "oba", organisation: "son", message: "i love you daddy" },
-				{ name: "pelumi", organisation: "son", message: "i love you daddy" },
-				{ name: "adedapo", organisation: "wife", message: "i love you daddy" },
-			]);
-		}
+		// if ((await db.messages.count()) < 1) {
+		// 	await db.messages.bulkCreate([
+		// 		{ name: "busola", organisation: "daugther", message: "i love you daddy" },
+		// 		{ name: "oba", organisation: "son", message: "i love you daddy" },
+		// 		{ name: "pelumi", organisation: "son", message: "i love you daddy" },
+		// 		{ name: "adedapo", organisation: "wife", message: "i love you daddy" },
+		// 	]);
+		// }
 	} catch (e) {
 		console.log("Sequelize failed to start up", e);
 	}
